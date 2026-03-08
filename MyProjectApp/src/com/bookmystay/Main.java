@@ -1,17 +1,20 @@
+
 /*
- * UC1: Room Inventory Setup & Management
+ * UC2: Room Search & Availability Check
  * --------------------------------------
- * Initialize room types (Single, Double, Suite)
- * Store room counts and prices
- * Support dynamic inventory updates
- *
- * @version 1.0
+ * Added a read‑only search flow allowing guests to view available room types,
+ * check pricing, and see amenities without modifying inventory. 
+ * Uses snapshot-based lookups to ensure accurate, up‑to‑date availability
+ * while preventing accidental mutation of UC1’s core inventory state.
+ * 
+ * @version 2.0
  * @author developer
 */
 package com.bookmystay;
 
 import com.bookmystay.admin.HotelAdmin;
-import com.bookmystay.inventory.InventoryService;
+import com.bookmystay.inventory.*;
+import com.bookmystay.search.*;
 
 import java.util.Scanner;
 
@@ -26,6 +29,11 @@ public class Main {
 
         admin.setupInventory(sc);
 
-        admin.viewInventory();
+        SearchService searchService = new SearchService(inventoryService);
+        Guest guest = new Guest(searchService);
+
+        guest.searchRooms();
+
+        guest.checkRoomAvailability(sc);
     }
 }
