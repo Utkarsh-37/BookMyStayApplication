@@ -7,74 +7,80 @@ import java.util.*;
 
 public class BookingService {
 
-    private Set<String> bookedRoomIds = new HashSet<>();
+	private Set<String> bookedRoomIds = new HashSet<>();
 
-    private Map<RoomType, Set<String>> assignedRooms = new HashMap<>();
+	private Map<RoomType, Set<String>> assignedRooms = new HashMap<>();
 
-    private InventoryService inventoryService;
+	private InventoryService inventoryService;
 
-    public BookingService(InventoryService inventoryService) {
+	private BookingHistoryService historyService;
 
-        this.inventoryService = inventoryService;
+	public BookingService(InventoryService inventoryService,
+			BookingHistoryService historyService) {
 
-        for (RoomType type : RoomType.values()) {
-            assignedRooms.put(type, new HashSet<>());
-        }
-    }
+		this.inventoryService = inventoryService;
+		this.historyService = historyService;
 
-    public Reservation allocateRoom(Reservation reservation) {
+		for (RoomType type : RoomType.values()) {
+			assignedRooms.put(type, new HashSet<>());
+		}
+	}
 
-        RoomType type = reservation.getRoomType();
+	public Reservation allocateRoom(Reservation reservation) {
 
-        if (inventoryService.getAvailableRooms(type) <= 0) {
+		RoomType type = reservation.getRoomType();
 
-            System.out.println("Booking failed for " +
-                    reservation.getGuestName() +
-                    " (No rooms available)");
+		if (inventoryService.getAvailableRooms(type) <= 0) {
 
-            return null;
-        }
+			System.out.println("Booking failed for " +
+					reservation.getGuestName() +
+					" (No rooms available)");
 
-        String roomId = generateRoomId(type);
+			return null;
+		}
 
-        reservation.setRoomId(roomId);
+		String roomId = generateRoomId(type);
 
-        bookedRoomIds.add(roomId);
+		reservation.setRoomId(roomId);
 
-        assignedRooms.get(type).add(roomId);
+		bookedRoomIds.add(roomId);
 
-        inventoryService.reduceRoom(type);
+		assignedRooms.get(type).add(roomId);
 
-        System.out.println("Booking confirmed for "
-                + reservation.getGuestName()
-                + " | Reservation ID: " + reservation.getReservationId()
-                + " | Room ID: " + roomId);
+		inventoryService.reduceRoom(type);
 
-        return reservation;
-    }
+		historyService.addReservation(reservation);
 
-    private String generateRoomId(RoomType type) {
+		System.out.println("Booking confirmed for "
+				+ reservation.getGuestName()
+				+ " | Reservation ID: " + reservation.getReservationId()
+				+ " | Room ID: " + roomId);
 
-        String prefix = type.toString().substring(0,1);
+		return reservation;
+	}
 
-        String roomId;
+	private String generateRoomId(RoomType type) {
 
-        do {
+		String prefix = type.toString().substring(0,1);
 
-            roomId = prefix + (int)(Math.random()*1000);
+		String roomId;
 
-        } while(bookedRoomIds.contains(roomId));
+		do {
 
-        return roomId;
-    }
+			roomId = prefix + (int)(Math.random()*1000);
 
-    public void displayAssignedRooms() {
+		} while(bookedRoomIds.contains(roomId));
 
-        System.out.println("\nAssigned Rooms\n");
+		return roomId;
+	}
 
-        for(RoomType type : assignedRooms.keySet()){
+	public void displayAssignedRooms() {
 
-            System.out.println(type + " → " + assignedRooms.get(type));
-        }
-    }
+		System.out.println("\nAssigned Rooms\n");
+
+		for(RoomType type : assignedRooms.keySet()){
+
+			System.out.println(type + " → " + assignedRooms.get(type));
+		}
+	}
 }

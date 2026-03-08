@@ -1,12 +1,12 @@
 /*
- * UC5: Add-On Service Selection
- * -----------------------------
- * Introduces optional services that can be attached to confirmed reservations:
- * - Allows guests to select additional services such as Breakfast, Airport Pickup, and Spa.
- * - Uses a Map<ReservationID, List<Service>> to maintain a one-to-many relationship
- *   between a reservation and its selected services.
+ * UC6: Booking History & Reporting
+ * --------------------------------
+ * - Stores reservations in a List<Reservation>.
+ * - Allows administrators to view booking history.
+ * - Supports reservation cancellation.
+ * - Generates simple booking reports for audit and support.
  *
- * @version 5.0
+ * @version 6.0
  * @author developer
  */
 package com.bookmystay;
@@ -20,107 +20,150 @@ import java.util.*;
 
 public class Main {
 
-    public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException {
 
-        Scanner sc = new Scanner(System.in);
+		Scanner sc = new Scanner(System.in);
 
-        InventoryService inventory = new InventoryService();
-        HotelAdmin admin = new HotelAdmin(inventory);
+		InventoryService inventory = new InventoryService();
+		HotelAdmin admin = new HotelAdmin(inventory);
 
-        admin.setupInventory(sc);
-        admin.viewInventory();
+		admin.setupInventory(sc);
+		admin.viewInventory();
 
-        System.out.print("\nDo you want to edit inventory? (y/n)");
-        String editChoice = sc.next();
+		System.out.print("\nDo you want to edit inventory? (y/n)");
+		String editChoice = sc.next();
 
-        if(editChoice.equalsIgnoreCase("y")){
-            admin.editInventory(sc);
-        }
+		if(editChoice.equalsIgnoreCase("y")){
+			admin.editInventory(sc);
+		}
 
-        admin.viewInventory();
+		admin.viewInventory();
 
-        SearchService searchService = new SearchService(inventory);
-        Guest guest = new Guest(searchService);
+		SearchService searchService = new SearchService(inventory);
+		Guest guest = new Guest(searchService);
 
-        guest.searchMenu(sc);
+		guest.searchMenu(sc);
 
-        BookingService bookingService = new BookingService(inventory);
+		BookingHistoryService historyService = new BookingHistoryService();
 
-        BookingQueueService bookingQueueService =
-                new BookingQueueService(bookingService);
+		BookingService bookingService = new BookingService(inventory, historyService);
 
-        System.out.print("Enter number of booking requests:");
+		BookingQueueService bookingQueueService =
+				new BookingQueueService(bookingService);
 
-        int n = sc.nextInt();
+		System.out.print("Enter number of booking requests:");
 
-        for (int i = 0; i < n; i++) {
+		int n = sc.nextInt();
 
-            System.out.print("Enter guest name:");
-            String name = sc.next();
+		for (int i = 0; i < n; i++) {
 
-            System.out.print("Enter room type (SINGLE/DOUBLE/SUITE)");
-            RoomType type = RoomType.valueOf(sc.next().toUpperCase());
+			System.out.print("Enter guest name:");
+			String name = sc.next();
 
-            bookingQueueService.addBookingRequest(new Reservation(name,type));
+			System.out.print("Enter room type (SINGLE/DOUBLE/SUITE)");
+			RoomType type;
 
-            Thread.sleep(3000); // delay between requests
-        }
+			try {
+				type = RoomType.valueOf(sc.next().toUpperCase());
+			} catch (IllegalArgumentException e) {
+				System.out.println("Invalid room type. Try again.");
+				i--;
+				continue;
+			}
 
-        System.out.println("\nProcessing bookings...\n");
+			bookingQueueService.addBookingRequest(new Reservation(name,type));
 
-        List<Reservation> reservations = bookingQueueService.processBookings();
+			Thread.sleep(3000); // delay between requests
+		}
 
-        bookingService.displayAssignedRooms();
+		System.out.println("\nProcessing bookings...\n");
 
-        admin.viewInventory();
+		List<Reservation> reservations = bookingQueueService.processBookings();
 
-        ServiceManager serviceManager = new ServiceManager();
-        
-        for(Reservation r : reservations){
+		bookingService.displayAssignedRooms();
 
-            System.out.println("\nAdd services for Reservation: " + r.getReservationId());
+		admin.viewInventory();
 
-            while(true){
+		ServiceManager serviceManager = new ServiceManager();
 
-                System.out.println("""
-                1 Breakfast (₹500)
-                2 Airport Pickup (₹1000)
-                3 Spa (₹1500)
-                4 Done
-                """);
+		for(Reservation r : reservations){
 
-                int choice = sc.nextInt();
+			System.out.println("\nAdd services for Reservation: " + r.getReservationId());
 
-                switch(choice){
+			while(true){
 
-                    case 1 -> serviceManager.addService(
-                            r.getReservationId(),
-                            new Service("Breakfast",500));
+				System.out.println("""
+						1 Breakfast (₹500)
+						2 Airport Pickup (₹1000)
+						3 Spa (₹1500)
+						4 Done
+						""");
 
-                    case 2 -> serviceManager.addService(
-                            r.getReservationId(),
-                            new Service("Airport Pickup",1000));
+				int choice = sc.nextInt();
 
-                    case 3 -> serviceManager.addService(
-                            r.getReservationId(),
-                            new Service("Spa",1500));
+				switch(choice){
 
-                    case 4 -> {
-                        double cost =
-                                serviceManager.calculateServiceCost(
-                                        r.getReservationId());
+				case 1 -> serviceManager.addService(
+						r.getReservationId(),
+						new Service("Breakfast",500));
 
-                        System.out.println("Total Service Cost: ₹" + cost);
+				case 2 -> serviceManager.addService(
+						r.getReservationId(),
+						new Service("Airport Pickup",1000));
 
-                        serviceManager.showServices(r.getReservationId());
+				case 3 -> serviceManager.addService(
+						r.getReservationId(),
+						new Service("Spa",1500));
 
-                        break;
-                    }
-                }
+				case 4 -> {
+					double cost =
+							serviceManager.calculateServiceCost(
+									r.getReservationId());
 
-                if(choice == 4) break;
-            }
-        }
+					System.out.println("Total Service Cost: ₹" + cost);
 
-    }
+					serviceManager.showServices(r.getReservationId());
+
+					break;
+				}
+				}
+
+				if(choice == 4) break;
+			}
+		}
+		while(true){
+
+			System.out.println("""
+					--- Admin Reporting ---
+					1 View Booking History
+					2 Cancel Reservation
+					3 Generate Report
+					4 Exit
+					""");
+
+			int option = sc.nextInt();
+
+			switch(option){
+
+			case 1 -> historyService.showAllReservations();
+
+			case 2 -> {
+
+				System.out.print("Enter Reservation ID to cancel: ");
+
+				String id = sc.next();
+
+				historyService.cancelReservation(id);
+			}
+
+			case 3 -> historyService.generateReport();
+
+			case 4 -> {
+				System.out.println("Exiting reporting module.");
+				return;
+			}
+			}
+		}
+
+	}
 }
