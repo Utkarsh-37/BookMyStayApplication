@@ -1,14 +1,14 @@
 /*
- * UC4: Reservation Confirmation & Room Allocation
- * -----------------------------------------------
- * Added FIFO processing of queued booking requests with atomic room allocation:
- * - Dequeues next request, decrements inventory if available, and assigns a unique room ID.
- * - Prevents double-booking via a Set of booked room IDs and per-type assignment tracking.
- * - Options 8 & 9 confirm one/all reservations; option 10 displays confirmed allocations.
+ * UC5: Add-On Service Selection
+ * -----------------------------
+ * Introduces optional services that can be attached to confirmed reservations:
+ * - Allows guests to select additional services such as Breakfast, Airport Pickup, and Spa.
+ * - Uses a Map<ReservationID, List<Service>> to maintain a one-to-many relationship
+ *   between a reservation and its selected services.
  *
- * @version 4.0
+ * @version 5.0
  * @author developer
-*/
+ */
 package com.bookmystay;
 
 import com.bookmystay.admin.HotelAdmin;
@@ -16,7 +16,7 @@ import com.bookmystay.booking.*;
 import com.bookmystay.inventory.*;
 import com.bookmystay.search.*;
 
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
 
@@ -68,11 +68,59 @@ public class Main {
 
         System.out.println("\nProcessing bookings...\n");
 
-        bookingQueueService.processBookings();
+        List<Reservation> reservations = bookingQueueService.processBookings();
 
         bookingService.displayAssignedRooms();
 
         admin.viewInventory();
+
+        ServiceManager serviceManager = new ServiceManager();
+        
+        for(Reservation r : reservations){
+
+            System.out.println("\nAdd services for Reservation: " + r.getReservationId());
+
+            while(true){
+
+                System.out.println("""
+                1 Breakfast (₹500)
+                2 Airport Pickup (₹1000)
+                3 Spa (₹1500)
+                4 Done
+                """);
+
+                int choice = sc.nextInt();
+
+                switch(choice){
+
+                    case 1 -> serviceManager.addService(
+                            r.getReservationId(),
+                            new Service("Breakfast",500));
+
+                    case 2 -> serviceManager.addService(
+                            r.getReservationId(),
+                            new Service("Airport Pickup",1000));
+
+                    case 3 -> serviceManager.addService(
+                            r.getReservationId(),
+                            new Service("Spa",1500));
+
+                    case 4 -> {
+                        double cost =
+                                serviceManager.calculateServiceCost(
+                                        r.getReservationId());
+
+                        System.out.println("Total Service Cost: ₹" + cost);
+
+                        serviceManager.showServices(r.getReservationId());
+
+                        break;
+                    }
+                }
+
+                if(choice == 4) break;
+            }
+        }
 
     }
 }

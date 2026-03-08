@@ -1,6 +1,8 @@
 package com.bookmystay.booking;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 public class BookingQueueService {
@@ -20,15 +22,21 @@ public class BookingQueueService {
         System.out.println("Request added for " + reservation.getGuestName());
     }
 
-    public void processBookings() {
+    public List<Reservation> processBookings() {
 
-        System.out.println("\nProcessing Booking Queue...\n");
+        List<Reservation> confirmedReservations = new ArrayList<>();
 
         while(!bookingQueue.isEmpty()){
 
             Reservation reservation = bookingQueue.poll();
 
-            bookingService.allocateRoom(reservation);
+            Reservation confirmed = bookingService.allocateRoom(reservation);
+
+            if(confirmed != null){
+                confirmedReservations.add(confirmed);
+            }
         }
+
+        return confirmedReservations;
     }
 }

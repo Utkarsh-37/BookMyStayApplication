@@ -22,7 +22,7 @@ public class BookingService {
         }
     }
 
-    public boolean allocateRoom(Reservation reservation) {
+    public Reservation allocateRoom(Reservation reservation) {
 
         RoomType type = reservation.getRoomType();
 
@@ -32,7 +32,7 @@ public class BookingService {
                     reservation.getGuestName() +
                     " (No rooms available)");
 
-            return false;
+            return null;
         }
 
         String roomId = generateRoomId(type);
@@ -47,9 +47,10 @@ public class BookingService {
 
         System.out.println("Booking confirmed for "
                 + reservation.getGuestName()
+                + " | Reservation ID: " + reservation.getReservationId()
                 + " | Room ID: " + roomId);
 
-        return true;
+        return reservation;
     }
 
     private String generateRoomId(RoomType type) {
