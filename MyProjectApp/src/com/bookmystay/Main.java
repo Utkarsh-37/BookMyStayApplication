@@ -1,12 +1,12 @@
 /*
- * UC3: Booking Request Queue (First-Come-First-Served)
- * ----------------------------------------------------
- * Introduced a FIFO booking queue to accept and order booking requests fairly.
- * Option 6 now accepts N users in one go; each request is enqueued in sequence
- * with a fixed 3000 ms delay between users to mimic staggered arrivals.
- * Synchronized queue operations keep things simple (no concurrent collections).
+ * UC4: Reservation Confirmation & Room Allocation
+ * -----------------------------------------------
+ * Added FIFO processing of queued booking requests with atomic room allocation:
+ * - Dequeues next request, decrements inventory if available, and assigns a unique room ID.
+ * - Prevents double-booking via a Set of booked room IDs and per-type assignment tracking.
+ * - Options 8 & 9 confirm one/all reservations; option 10 displays confirmed allocations.
  *
- * @version 3.0
+ * @version 4.0
  * @author developer
 */
 package com.bookmystay;
@@ -44,8 +44,10 @@ public class Main {
 
         guest.searchMenu(sc);
 
-        BookingQueueService bookingService =
-                new BookingQueueService(inventory);
+        BookingService bookingService = new BookingService(inventory);
+
+        BookingQueueService bookingQueueService =
+                new BookingQueueService(bookingService);
 
         System.out.print("Enter number of booking requests:");
 
@@ -59,16 +61,18 @@ public class Main {
             System.out.print("Enter room type (SINGLE/DOUBLE/SUITE)");
             RoomType type = RoomType.valueOf(sc.next().toUpperCase());
 
-            bookingService.addBookingRequest(
-                    new Reservation(name, type));
+            bookingQueueService.addBookingRequest(new Reservation(name,type));
 
             Thread.sleep(3000); // delay between requests
         }
 
         System.out.println("\nProcessing bookings...\n");
 
-        bookingService.processBookings();
+        bookingQueueService.processBookings();
+
+        bookingService.displayAssignedRooms();
 
         admin.viewInventory();
+
     }
 }
