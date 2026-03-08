@@ -12,29 +12,28 @@ public class Guest {
         this.searchService = searchService;
     }
 
-    public void searchRooms() {
-        searchService.displayAvailableRooms();
-    }
+    public void searchMenu(Scanner sc) {
 
-    public void checkRoomAvailability(Scanner sc) {
+        while (true) {
 
-        System.out.println("\nEnter room type to check availability (SINGLE / DOUBLE / SUITE):");
+            System.out.println("""
+                    1 Check Single Room
+                    2 Check Double Room
+                    3 Check Suite Room
+                    4 Exit
+                    """);
 
-        String input = sc.next().toUpperCase();
+            int choice = sc.nextInt();
 
-        try {
+            switch (choice) {
 
-            RoomType type = RoomType.valueOf(input);
-
-            boolean available = searchService.checkAvailability(type);
-
-            if (available) {
-                System.out.println(type + " room is available.");
+                case 1 -> searchService.checkAvailability(RoomType.SINGLE);
+                case 2 -> searchService.checkAvailability(RoomType.DOUBLE);
+                case 3 -> searchService.checkAvailability(RoomType.SUITE);
+                case 4 -> {
+                    return;
+                }
             }
-
-        } catch (IllegalArgumentException e) {
-
-            System.out.println("Invalid room type.");
         }
     }
 }

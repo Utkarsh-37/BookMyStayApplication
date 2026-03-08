@@ -11,35 +11,19 @@ public class SearchService {
         this.inventoryService = inventoryService;
     }
 
-    public void displayAvailableRooms() {
-
-        System.out.println("\nAvailable Rooms\n");
-
-        for (RoomType type : RoomType.values()) {
-
-            int available = inventoryService.getAvailableRooms(type);
-
-            if (available > 0) {
-
-                double price = inventoryService.getRoomPrice(type);
-
-                System.out.println(type +
-                        " | Available: " + available +
-                        " | Price: " + price +
-                        " | Amenities: Basic amenities included");
-            }
-        }
-    }
-
-    public boolean checkAvailability(RoomType type) {
+    public void checkAvailability(RoomType type) {
 
         int available = inventoryService.getAvailableRooms(type);
 
-        if (available <= 0) {
-            System.out.println("Sorry, " + type + " rooms are not available.");
-            return false;
-        }
+        if (available > 0) {
 
-        return true;
+            System.out.println(type +
+                    " Available: " + available +
+                    " Price: " + inventoryService.getRoomPrice(type));
+
+        } else {
+
+            System.out.println("No rooms available.");
+        }
     }
 }

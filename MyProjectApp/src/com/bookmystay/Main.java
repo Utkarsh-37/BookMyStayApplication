@@ -1,18 +1,18 @@
-
 /*
- * UC2: Room Search & Availability Check
- * --------------------------------------
- * Added a read‑only search flow allowing guests to view available room types,
- * check pricing, and see amenities without modifying inventory. 
- * Uses snapshot-based lookups to ensure accurate, up‑to‑date availability
- * while preventing accidental mutation of UC1’s core inventory state.
- * 
- * @version 2.0
+ * UC3: Booking Request Queue (First-Come-First-Served)
+ * ----------------------------------------------------
+ * Introduced a FIFO booking queue to accept and order booking requests fairly.
+ * Option 6 now accepts N users in one go; each request is enqueued in sequence
+ * with a fixed 3000 ms delay between users to mimic staggered arrivals.
+ * Synchronized queue operations keep things simple (no concurrent collections).
+ *
+ * @version 3.0
  * @author developer
 */
 package com.bookmystay;
 
 import com.bookmystay.admin.HotelAdmin;
+import com.bookmystay.booking.*;
 import com.bookmystay.inventory.*;
 import com.bookmystay.search.*;
 
@@ -20,20 +20,55 @@ import java.util.Scanner;
 
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
 
         Scanner sc = new Scanner(System.in);
 
-        InventoryService inventoryService = new InventoryService();
-        HotelAdmin admin = new HotelAdmin(inventoryService);
+        InventoryService inventory = new InventoryService();
+        HotelAdmin admin = new HotelAdmin(inventory);
 
         admin.setupInventory(sc);
+        admin.viewInventory();
 
-        SearchService searchService = new SearchService(inventoryService);
+        System.out.print("\nDo you want to edit inventory? (y/n)");
+        String editChoice = sc.next();
+
+        if(editChoice.equalsIgnoreCase("y")){
+            admin.editInventory(sc);
+        }
+
+        admin.viewInventory();
+
+        SearchService searchService = new SearchService(inventory);
         Guest guest = new Guest(searchService);
 
-        guest.searchRooms();
+        guest.searchMenu(sc);
 
-        guest.checkRoomAvailability(sc);
+        BookingQueueService bookingService =
+                new BookingQueueService(inventory);
+
+        System.out.print("Enter number of booking requests:");
+
+        int n = sc.nextInt();
+
+        for (int i = 0; i < n; i++) {
+
+            System.out.print("Enter guest name:");
+            String name = sc.next();
+
+            System.out.print("Enter room type (SINGLE/DOUBLE/SUITE)");
+            RoomType type = RoomType.valueOf(sc.next().toUpperCase());
+
+            bookingService.addBookingRequest(
+                    new Reservation(name, type));
+
+            Thread.sleep(3000); // delay between requests
+        }
+
+        System.out.println("\nProcessing bookings...\n");
+
+        bookingService.processBookings();
+
+        admin.viewInventory();
     }
 }

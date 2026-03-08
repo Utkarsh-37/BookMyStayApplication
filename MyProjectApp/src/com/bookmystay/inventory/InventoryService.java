@@ -5,16 +5,19 @@ import java.util.Map;
 
 public class InventoryService {
 
-    private Map<RoomType, Integer> roomCounts;
-    private Map<RoomType, Double> roomPrices;
-
-    public InventoryService() {
-        roomCounts = new EnumMap<>(RoomType.class);
-        roomPrices = new EnumMap<>(RoomType.class);
-    }
+    private Map<RoomType, Integer> roomCounts = new EnumMap<>(RoomType.class);
+    private Map<RoomType, Double> roomPrices = new EnumMap<>(RoomType.class);
 
     public void setRoomDetails(RoomType type, int count, double price) {
         roomCounts.put(type, count);
+        roomPrices.put(type, price);
+    }
+
+    public void updateRoomCount(RoomType type, int count) {
+        roomCounts.put(type, count);
+    }
+
+    public void updateRoomPrice(RoomType type, double price) {
         roomPrices.put(type, price);
     }
 
@@ -26,26 +29,20 @@ public class InventoryService {
         return roomPrices.getOrDefault(type, 0.0);
     }
 
-    public Map<RoomType, Integer> getRoomCounts() {
-        return roomCounts;
+    public void reduceRoom(RoomType type) {
+        int current = roomCounts.get(type);
+        roomCounts.put(type, current - 1);
     }
 
-    public Map<RoomType, Double> getRoomPrices() {
-        return roomPrices;
-    }
-    
     public void displayInventory() {
 
-        System.out.println("\nCurrent Room Inventory\n");
+        System.out.println("\nCurrent Inventory\n");
 
         for (RoomType type : RoomType.values()) {
 
-            int count = roomCounts.getOrDefault(type, 0);
-            double price = roomPrices.getOrDefault(type, 0.0);
-
             System.out.println(type +
-                    " | Available Rooms: " + count +
-                    " | Price per Night: " + price);
+                    " | Available: " + roomCounts.get(type) +
+                    " | Price: " + roomPrices.get(type));
         }
     }
 }
